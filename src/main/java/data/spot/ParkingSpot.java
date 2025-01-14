@@ -1,16 +1,18 @@
 package data.spot;
 
-import java.util.Scanner;
-import java.util.UUID;
+import data.Ticket;
+import data.vehicle.Vehicle;
+
+import java.time.LocalDateTime;
 
 public class ParkingSpot {
     private int id;
-    private boolean available;
+    private boolean isAvailable;
     private SpotType spotType;
 
     public ParkingSpot(int id, SpotType spotType) {
         this.id = id;
-        this.available = true;
+        this.isAvailable = true;
         this.spotType = spotType;
     }
 
@@ -23,16 +25,23 @@ public class ParkingSpot {
     }
 
     public boolean isAvailable() {
-        return available;
+        return isAvailable;
     }
 
-    public void occupy() {
-        available = false;
+    public double getPrice() {
+        return spotType.getPrice();
     }
 
-    public void free() {
-        available = true;
+    public void reserveSpot(Vehicle vehicle) {
+        if (!isAvailable) {
+            throw new IllegalStateException("Spot is not available");
+        }
+        isAvailable = false;
+        Ticket ticket = new Ticket(LocalDateTime.now(), vehicle.getId(), this.id, spotType.getPrice());
     }
 
+    public void release() {
+        isAvailable = true; // Mark the spot as unoccupied
+    }
 
 }

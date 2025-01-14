@@ -13,12 +13,14 @@ public class Ticket {
     private final LocalDateTime startTime;
     private final int vehicleId;
     private  final int spotId;
+    private final int ticketId;
     private final double pricePerHour;
 
   public Ticket(LocalDateTime startTime, int vehicleId, int spotId, double pricePerHour) {
       this.startTime = startTime;
       this.vehicleId = vehicleId;
       this.spotId = spotId;
+      this.ticketId = UUID.randomUUID().hashCode();
       this.pricePerHour = pricePerHour;
 
   }
@@ -34,13 +36,16 @@ public class Ticket {
   public int getVehicleID() {
      return vehicleId;
   }
+  public int getTicketID() {
+      return ticketId;
+  }
 
  public double calculatePrice(LocalDateTime leavingDateTime) {
       return pricePerHour * getCountOfParkingHours(leavingDateTime);
  }
 
  private int getCountOfParkingHours(LocalDateTime leavingDateTime) {
-      return (int) Duration.between(leavingDateTime, startTime).toHours();
+      return (int) Duration.between(startTime, leavingDateTime).toHours();
  }
 
   @Override

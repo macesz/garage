@@ -1,5 +1,7 @@
 package data.spot;
 
+import data.vehicle.Vehicle;
+
 public enum SpotType {
     SMALL("small", 9.99, "s"),
     LARGE("large", 19.99, "b");
@@ -22,4 +24,7 @@ public enum SpotType {
     public String getCarType() {
         return carType;
     }
+
+
+
 }

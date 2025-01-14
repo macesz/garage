@@ -12,63 +12,111 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class ParkingGarage {
-    private final Set<ParkingSpot> parkingSpots;
+    private final Map<Integer, ParkingSpot> parkingSpots;
+    private final Map<Integer, Vehicle> vehicles;
+    private final Map<Integer, Ticket> tickets;
+
 
     public ParkingGarage() {
-        parkingSpots = new HashSet<>();
+        parkingSpots = new HashMap<>();
+        vehicles = new HashMap<>();
+        tickets = new HashMap<>();
     }
 
-    public void addParkingSpot(ParkingSpot parkingSpot) {
-        parkingSpots.add(parkingSpot);
+    public void addSpot(ParkingSpot spot) {
+        if (parkingSpots.containsKey(spot.getId())) {
+            throw new IllegalArgumentException("Spot ID " + spot.getId() + " already exists.");
+        }
+        parkingSpots.put(spot.getId(), spot);
     }
 
-    public Set<ParkingSpot> getAvaliableParkingSpots() {
-        return parkingSpots.stream()
-                .filter(ParkingSpot::isAvailable)
-                .collect(Collectors.toSet());
+    public Collection<ParkingSpot> getParkingSpots() {
+        return parkingSpots.values();
     }
 
-    public boolean hasAvaliableParkingSpotsByType(SpotType spotType) {
-        return parkingSpots.stream()
-                .filter(ParkingSpot::isAvailable)
-                .anyMatch(parkingSpot -> parkingSpot.getSpotType() == spotType);
+    public void registerVehicle(Vehicle vehicle) {
+        if (vehicles.containsKey(vehicle.getId())) {
+            throw new IllegalArgumentException("Vehicle ID " + vehicle.getId() + " is already registered.");
+        }
+        vehicles.put(vehicle.getId(), vehicle);
     }
 
-    public ParkingSpot getSpotById(int id) {
-        return parkingSpots.stream().filter(parkingSpot -> parkingSpot.getId() == id).toList().getFirst();
-    }
 
-    public boolean parkVehicle(Vehicle vehicle) {
-        if (vehicle.isParked()) {
-            return false;
+    public Ticket parkingVehicle(Vehicle vehicle) {
+        if (!vehicles.containsKey(vehicle.getId())) {
+            throw new IllegalArgumentException("Vehicle does not exist");
+        }
+        if(vehicle.getCurrentParkingSpot() != null) {
+            throw new IllegalArgumentException("Vehicle already has a parking spot");
         }
 
-        // Get available parking spots
-        Set<ParkingSpot> availableSpots = getAvaliableParkingSpots();
+        List<ParkingSpot>  suitableSpot = findSuitableSpots(vehicle);
 
-        if (availableSpots.isEmpty()) {
-            return false;
-
+        if (suitableSpot.isEmpty()) {
+            throw new IllegalArgumentException("No suitable spot found");
         }
 
+        ParkingSpot parkingSpot = suitableSpot.getFirst();
+        parkingSpot.reserveSpot(vehicle);
+        vehicle.setCurrentParkingSpot(parkingSpot);
 
-        SpotType spotTypeToCheck = vehicle.getType().equals("regular") ? SpotType.SMALL : SpotType.LARGE;
+        double pricePerHour = parkingSpot.getPrice();
+        Ticket ticket = new Ticket(LocalDateTime.now(), vehicle.getId(), parkingSpot.getId(), pricePerHour);
+        tickets.put(vehicle.getId(), ticket);
+        return ticket;
+    }
 
-        for (ParkingSpot parkingSpot : availableSpots) {
-            if (parkingSpot.getSpotType() == spotTypeToCheck) {
-                return vehicle.reserveParkingSpot(parkingSpot);
+
+    private List<ParkingSpot> findSuitableSpots(Vehicle vehicle) {
+        List<ParkingSpot> availableSpots = new ArrayList<>();
+        for (ParkingSpot spot : parkingSpots.values()) {
+            if (spot.isAvailable() && vehicle.isSuitable(spot)) {
+                availableSpots.add(spot);
             }
         }
-        return false;
+        return availableSpots;
     }
 
-    public double exitGarage(Vehicle vehicle) {
-        double parkingFee = vehicle.getParkingFee(LocalDateTime.now());
-        ParkingSpot parkingSpot = getSpotById(vehicle.getId());
-        parkingSpot.free();
-        vehicle.setTicket(null);
-        return parkingFee;
+    public double releaseSpot(Integer vehicleId, LocalDateTime departureTime) {
+        if(!tickets.containsKey(vehicleId)) {
+            throw new IllegalArgumentException("Vehicle does not exist");
+        }
+
+        Ticket ticket = tickets.get(vehicleId);
+        double payment = ticket.calculatePrice(departureTime);
+
+        ParkingSpot parkingSpot = parkingSpots.get(ticket.getSpotId());
+        parkingSpot.release();
+
+        Vehicle vehicle = vehicles.get(vehicleId);
+        vehicle.setCurrentSpot(null);
+
+        tickets.remove(vehicleId);
+
+        return payment;
+    }
+
+    public Collection<ParkingSpot> getAllSpots() {
+        return parkingSpots.values();
+    }
+
+    public Collection<Vehicle> getAllVehicles() {
+        return vehicles.values();
+    }
+
+    public Collection<Ticket> getAllTickets() {
+        return tickets.values();
     }
 
 
+
+//    public List<ParkingSpot> hasAvailableParkingSpotsByType(SpotType spotType) {
+//        List<ParkingSpot> availableSpot = new ArrayList<>();
+//        for (ParkingSpot parkingSpot : parkingSpots.values()) {
+//            if (parkingSpot.getSpotType() == spotType) {
+//                availableSpot.add(parkingSpot);
+//            }
+//        }
+//        return availableSpot;
+//    }
 }

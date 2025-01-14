@@ -11,10 +11,8 @@ public class Truck extends Vehicle {
     }
 
     @Override
-    public boolean reserveParkingSpot(ParkingSpot parkingSpot) {
-        if (parkingSpot.isAvailable() && parkingSpot.getSpotType() == SpotType.LARGE) {
-            return super.reserveParkingSpot(parkingSpot);
-        }
-        return false;
+    public boolean isSuitable(ParkingSpot spot) {
+        return spot.getSpotType() == SpotType.LARGE;
     }
+
 }
